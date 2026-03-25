@@ -1,0 +1,34 @@
+{
+  "name": "mcp-meta-server",
+  "version": "1.0.0",
+  "description": "MCP Server (Model Context Protocol) - Meta Server",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "dev:once": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"(opcional) configurar eslint\"",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "axios": "^1.x",
+    "chokidar": "^3.x",
+    "js-yaml": "^4.1.1",
+    "zod": "^3.x",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "rimraf": "^5.x",
+    "tsx": "^4.x",
+    "typescript": "^5.x"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
