@@ -11,9 +11,7 @@ export default {
   handler: async ({ responseBody, endpointName = "unknown", method = "GET" }: { responseBody: string, endpointName?: string, method?: string }) => {
     try {
       const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error("OPENAI_API_KEY não definida");
-      }
+      if (!apiKey) throw new Error("OPENAI_API_KEY não definida");
 
       const prompt = `Analise este JSON de resposta de um endpoint API e gere:
 1. Uma interface TypeScript representando o contrato de dados.
@@ -38,30 +36,17 @@ Responda apenas com um objeto JSON contendo as chaves: typescriptInterface (stri
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`OpenAI API error: ${response.status}`);
 
       const data = await response.json();
-      const content = data.choices[0].message.content;
-      const result = JSON.parse(content);
+      const result = JSON.parse(data.choices[0].message.content);
 
       console.error(`[infer_contract] Contrato inferido para ${endpointName}`);
-
       return result;
     } catch (error) {
-        let message: string;
-        if (error instanceof Error)
-            message = error.message;
-        else
-            message = "Unknown error";
+      const message = error instanceof Error ? error.message : "Unknown error";
       console.error(`[infer_contract] Erro: ${message}`);
-      return {
-        typescriptInterface: "",
-        jsonSchema: {},
-        description: "",
-        error: message
-      };
+      return { typescriptInterface: "", jsonSchema: {}, description: "", error: message };
     }
   }
 };

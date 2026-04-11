@@ -15,38 +15,21 @@ export default {
             const response = await fetch(url, {
                 method,
                 headers,
-                body: body ? body : undefined
+                body
             });
             const latencyMs = Date.now() - startTime;
-            const responseBody = await response.text();
-            const responseHeaders = Object.fromEntries(response.headers.entries());
+            const [responseBody, responseHeaders] = await Promise.all([
+              response.text(),
+              Promise.resolve(Object.fromEntries(response.headers.entries()))
+            ]);
 
             console.error(`[probe_endpoint] ${method} ${url} -> ${response.status} (${latencyMs}ms)`);
 
-            return {
-                status: response.status,
-                responseBody,
-                responseHeaders,
-                latencyMs
-            };
+            return { status: response.status, responseBody, responseHeaders, latencyMs };
         } catch (error) {
-            let message: string;
-
-            if (error instanceof Error) {
-                console.error(`[probe_endpoint] Erro ao acessar ${url}: ${error.message}`);
-                message = error.message;
-            } else {
-                console.error(`[probe_endpoint] Erro desconhecido ao acessar ${url}`);
-                message = "Unknown error";
-            }
-
-            return {
-                status: 0,
-                responseBody: "",
-                responseHeaders: {},
-                latencyMs: 0,
-                error: message
-            };
+            const message = error instanceof Error ? error.message : "Unknown error";
+            console.error(`[probe_endpoint] Erro ao acessar ${url}: ${message}`);
+            return { status: 0, responseBody: "", responseHeaders: {}, latencyMs: 0, error: message };
         }
     }
 };

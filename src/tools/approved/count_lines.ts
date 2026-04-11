@@ -10,13 +10,11 @@ export default {
   handler: async ({ filePath }: { filePath: string }) => {
     try {
       const content = await fs.readFile(filePath, "utf-8");
-      const lines = content.split("\n").length;
-      const nonEmptyLines = content.split("\n").filter(line => line.trim().length > 0).length;
-
+      const lineArray = content.split("\n");
       return {
         file: filePath,
-        totalLines: lines,
-        nonEmptyLines: nonEmptyLines
+        totalLines: lineArray.length,
+        nonEmptyLines: lineArray.filter(line => line.trim()).length
       };
     } catch (error: any) {
       return { error: `Erro ao ler arquivo: ${error.message}` };

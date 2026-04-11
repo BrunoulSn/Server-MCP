@@ -10,15 +10,9 @@ export default {
   handler: async ({ filePath }: { filePath: string }) => {
     try {
       await fs.access(filePath);
-      return {
-        file: filePath,
-        exists: true
-      };
+      return { file: filePath, exists: true };
     } catch {
-      return {
-        file: filePath,
-        exists: false
-      };
+      return { file: filePath, exists: false };
     }
   }
 };

@@ -35,7 +35,12 @@ server.setRequestHandler(types_js_1.CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
     }
     catch (error) {
-        return { content: [{ type: "text", text: `Erro na execução:` /*${error.message}`*/ }], isError: true };
+        let message;
+        if (error instanceof Error)
+            message = error.message;
+        else
+            message = "Erro desconhecido";
+        return { content: [{ type: "text", text: `Erro na execução: ${message}` }], isError: true };
     }
 });
 const transport = new stdio_js_1.StdioServerTransport();

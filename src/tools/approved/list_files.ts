@@ -12,12 +12,7 @@ export default {
   handler: async ({ dirPath, recursive }: { dirPath: string, recursive: boolean }) => {
     try {
       const files = recursive ? await getFilesRecursive(dirPath) : await fs.readdir(dirPath);
-
-      return {
-        directory: dirPath,
-        files: files,
-        count: files.length
-      };
+      return { directory: dirPath, files, count: files.length };
     } catch (error: any) {
       return { error: `Erro ao listar diretório: ${error.message}` };
     }
@@ -25,19 +20,20 @@ export default {
 };
 
 async function getFilesRecursive(dir: string): Promise<string[]> {
-  const files: string[] = [];
   const items = await fs.readdir(dir);
+  const results: string[] = [];
 
-  for (const item of items) {
+  await Promise.all(items.map(async (item) => {
     const fullPath = path.join(dir, item);
     const stat = await fs.stat(fullPath);
-
+    
     if (stat.isDirectory()) {
-      files.push(...await getFilesRecursive(fullPath));
+      const nested = await getFilesRecursive(fullPath);
+      results.push(...nested);
     } else {
-      files.push(fullPath);
+      results.push(fullPath);
     }
-  }
+  }));
 
-  return files;
+  return results;
 }

@@ -18,43 +18,25 @@ export default {
         try {
             const paths = [...defaultPaths, ...customPaths];
             const promises = paths.map(async (path) => {
-                const url = baseUrl.endsWith("/") ? baseUrl + path.slice(1) : baseUrl + path;
+                const url = `${baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl}${path}`;
                 try {
                     const startTime = Date.now();
                     const response = await fetch(url, { method });
                     const latencyMs = Date.now() - startTime;
-                    if (response.status !== 404) {
-                        return { path, status: response.status, latencyMs };
-                    }
-                } catch (error) {
-                    // Ignorar erros de rede
+                    return response.status !== 404 ? { path, status: response.status, latencyMs } : null;
+                } catch {
+                    return null;
                 }
-                return null;
             });
 
-            const results = await Promise.all(promises);
-            const found = results.filter(r => r !== null);
-
-            console.error(`[discover_endpoints] ${baseUrl} -> ${found.length}/${paths.length} endpoints encontrados`);
-
-            return {
-                found,
-                total: paths.length,
-                baseUrl
-            };
+            const results = (await Promise.all(promises)).filter(r => r !== null);
+            console.error(`[discover_endpoints] ${baseUrl} -> ${results.length}/${paths.length} endpoints encontrados`);
+            
+            return { found: results, total: paths.length, baseUrl };
         } catch (error) {
-            let message: String;
-            if (error instanceof Error)
-                message = error.message;
-            else
-                message = "Unknown error";
+            const message = error instanceof Error ? error.message : "Unknown error";
             console.error(`[discover_endpoints] Erro: ${message}`);
-            return {
-                found: [],
-                total: 0,
-                baseUrl,
-                error: message
-            };
+            return { found: [], total: 0, baseUrl, error: message };
         }
     }
 };

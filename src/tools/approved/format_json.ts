@@ -9,12 +9,8 @@ export default {
   }),
   handler: async ({ jsonString, indent }: { jsonString: string, indent: number }) => {
     try {
-      const parsed = JSON.parse(jsonString);
-      const formatted = JSON.stringify(parsed, null, indent);
-      return {
-        original: jsonString,
-        formatted: formatted
-      };
+      const formatted = JSON.stringify(JSON.parse(jsonString), null, indent);
+      return { original: jsonString, formatted };
     } catch (error: any) {
       return { error: `Erro ao formatar JSON: ${error.message}` };
     }

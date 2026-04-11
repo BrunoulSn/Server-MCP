@@ -14,26 +14,16 @@ export default {
   handler: async ({ content, filename, dirPath, format }: { content: string, filename: string, dirPath: string, format: string }) => {
     try {
       await fs.mkdir(dirPath, { recursive: true });
-      const ext = format === "ts" ? "ts" : format;
-      const filePath = path.join(dirPath, `${filename}.${ext}`);
+      const filePath = path.join(dirPath, `${filename}.${format === "ts" ? "ts" : format}`);
       await fs.writeFile(filePath, content, "utf-8");
-      const stats = await fs.stat(filePath);
+      const { size } = await fs.stat(filePath);
 
-      console.error(`[save_contract] Arquivo salvo: ${filePath} (${stats.size} bytes)`);
-
-      return {
-        savedPath: filePath,
-        sizeBytes: stats.size,
-        format
-      };
+      console.error(`[save_contract] Arquivo salvo: ${filePath} (${size} bytes)`);
+      return { savedPath: filePath, sizeBytes: size, format };
     } catch (error) {
-      console.error(`[save_contract] Erro ao salvar: ${error.message}`);
-      return {
-        savedPath: "",
-        sizeBytes: 0,
-        format,
-        error: error.message
-      };
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      console.error(`[save_contract] Erro ao salvar: ${message}`);
+      return { savedPath: "", sizeBytes: 0, format, error: message };
     }
   }
 };

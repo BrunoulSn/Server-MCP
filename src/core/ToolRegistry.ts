@@ -17,8 +17,8 @@ export class ToolRegistry {
   }
 
 public register(tool: DynamicTool): void {
-  if (!tool.name || typeof tool.handler !== 'function') {
-    throw new Error(`Tool inválida tentou ser registrada: ${tool.name}`);
+  if (!tool?.name || typeof tool.handler !== 'function') {
+    throw new Error(`Tool inválida tentou ser registrada: ${tool?.name}`);
   }
   this.tools.set(tool.name, tool);
   console.error(`[Registry] Tool '${tool.name}' registrada/atualizada.`);

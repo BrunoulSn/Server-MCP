@@ -34,23 +34,30 @@ export class Logger {
   }
 
   debug(message: string | unknown, ...args: unknown[]): void {
-    if (!this.shouldLog('debug')) return;
-    console.debug(formatMessage('debug', this.tag, message), ...args);
+    this.log('debug', message, args);
   }
 
   info(message: string | unknown, ...args: unknown[]): void {
-    if (!this.shouldLog('info')) return;
-    console.info(formatMessage('info', this.tag, message), ...args);
+    this.log('info', message, args);
   }
 
   warn(message: string | unknown, ...args: unknown[]): void {
-    if (!this.shouldLog('warn')) return;
-    console.warn(formatMessage('warn', this.tag, message), ...args);
+    this.log('warn', message, args);
   }
 
   error(message: string | unknown, ...args: unknown[]): void {
-    if (!this.shouldLog('error')) return;
-    console.error(formatMessage('error', this.tag, message), ...args);
+    this.log('error', message, args);
+  }
+
+  private log(level: LogLevel, message: string | unknown, args: unknown[]): void {
+    if (!this.shouldLog(level)) return;
+    const consoleMethods: Record<LogLevel, typeof console.debug> = {
+      debug: console.debug,
+      info: console.info,
+      warn: console.warn,
+      error: console.error
+    };
+    consoleMethods[level](formatMessage(level, this.tag, message), ...args);
   }
 }
 

@@ -1,100 +1,65 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {  CallToolRequestSchema,  InitializeRequestSchema,  ListToolsRequestSchema} from "@modelcontextprotocol/sdk/types.js";import { zodToJsonSchema } from "zod-to-json-schema";
-import { z } from "zod";
 import { ToolRegistry } from "./core/ToolRegistry.js";
 import { ToolLoader } from "./core/toolLoader.js";
-import { AgenticCoder } from "./generators/AgenticCoder.js";
+export { ApiProber } from './core/api/ApiProber.js';
+export { EndpointDiscoverer } from './core/api/EndpointDiscoverer.js';
+export { ResponseComparator } from './core/api/ResponseComparator.js';
+export type {
+  HttpMethod,
+  HttpStatus,
+  JavaScriptType,
+  ProbeResult,
+  DiscoveredEndpoint,
+  EndpointDiscoveryResult,
+  InconsistentField,
+  ComparatorResponse,
+  CompareResult,
+  ApiProberOptions,
+  EndpointDiscovererOptions,
+} from './core/api/types.js';
 
 const registry = new ToolRegistry();
 const loader = new ToolLoader(registry);
 
-// Adicionar uma tool simples para teste
-const testTool = {
-  name: "hello_world",
-  description: "Retorna uma mensagem de teste 'Hello World'",
-  inputSchema: z.object({}),
-  handler: async () => {
-    return { message: "Hello World from MCP Server!" };
-  }
-};
-
-registry.register(testTool);
-
-const server = new Server(
-  {
-    name: "server TCS",
-    version: "1.0.0"
-  },
-  {
-    capabilities: {
-      tools: {}
-    }
-  }
-);
-
-server.setRequestHandler(InitializeRequestSchema, async () => {
-  console.error("[Initialize] Servidor inicializado");
-  return {
-    protocolVersion: "2024-11-05",
-    capabilities: { tools: {} },
-    serverInfo: { name: "meta-server", version: "1.0.0" }
-  };
+const server = new McpServer({
+  name: "server TCS",
+  version: "1.0.0"
 });
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  const tools = registry.getAllTools().map((t) => ({
-    name: t.name,
-    description: t.description,
-    inputSchema: zodToJsonSchema(t.inputSchema)
-  }));
-  console.error(`[ListTools] Tools disponíveis: ${tools.map(t => t.name).join(', ')}`);
-  return {
-    tools
-  };
-});
+async function registerDynamicTools() {
+  const tools = registry.getAllTools();
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  for (const tool of tools) {
+    const shape = tool.inputSchema?.shape ?? {};
 
-  console.error(`[Call] Tool chamada: ${name}`);
-
-  const tool = registry.getTool(name);
-
-  if (!tool) {
-    try {
-      const prototypePath = await AgenticCoder.generate(name, args);
-      return {
-        content: [{ type: "text", text: `Tool '${name}' não encontrada. Protótipo gerado em: ${prototypePath}` }],
-        isError: true
-      };
-    } catch (err: any) {
-      return {
-        content: [{ type: "text", text: `Tool '${name}' não encontrada e falha ao gerar protótipo: ${err?.message}` }],
-        isError: true
-      };
-    }
-  }
-
-  try {
-    const result = await tool.handler(args);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result) }]
+    const handler = async (args: any) => {
+      try {
+        const result = await tool.handler(args);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result) }]
+        };
+      } catch (error: any) {
+        return {
+          content: [{ type: "text" as const, text: `Erro: ${error?.message ?? "desconhecido"}` }],
+          isError: true as const
+        };
+      }
     };
-  } catch (error: any) {
-    console.error("[Error] Falha na execução:", error);
-    return {
-      content: [{ type: "text", text: `Erro na execução: ${error?.message || "unknown"}` }],
-      isError: true
-    };
+
+    server.tool(tool.name, tool.description, shape, handler);
   }
-});
+
+  console.error(`[Server] ${tools.length} ferramentas registradas no McpServer.`);
+}
 
 async function main() {
   console.error("Starting MCP server...");
 
   await loader.loadAll();
   loader.watch();
+
+  await registerDynamicTools();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -105,14 +70,4 @@ async function main() {
 main().catch((err) => {
   console.error("Fatal error:", err);
   process.exit(1);
-});
-
-//import { InitializeRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-
-server.setRequestHandler(InitializeRequestSchema, async () => {
-  return {
-    protocolVersion: "2024-11-05",
-    capabilities: { tools: {} },
-    serverInfo: { name: "meta-server", version: "1.0.0" }
-  };
 });
